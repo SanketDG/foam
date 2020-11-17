@@ -5,6 +5,8 @@ import frontmatterPlugin from 'remark-frontmatter';
 import { parse as parseYAML } from 'yaml';
 import visit from 'unist-util-visit';
 import { Parent, Point } from 'unist';
+import detectNewline from 'detect-newline';
+import os from 'os';
 import * as path from 'path';
 import { NoteGraphAPI } from './note-graph';
 import { NoteLinkDefinition, Note, NoteParser } from './types';
@@ -112,8 +114,8 @@ export function createMarkdownParser(extraPlugins: ParserPlugin[]): NoteParser {
     }
   });
 
-  return {
-    parse: (uri: string, markdown: string, eol: string): Note => {
+  const foamParser: NoteParser = {
+    parse: (uri: string, markdown: string): Note => {
       markdown = plugins.reduce((acc, plugin) => {
         try {
           return plugin.onWillParseMarkdown?.(acc) || acc;
@@ -123,6 +125,7 @@ export function createMarkdownParser(extraPlugins: ParserPlugin[]): NoteParser {
         }
       }, markdown);
       const tree = parser.parse(markdown);
+      const eol = detectNewline(markdown) || os.EOL;
 
       var note: Note = {
         slug: uriToSlug(uri),
@@ -194,6 +197,7 @@ export function createMarkdownParser(extraPlugins: ParserPlugin[]): NoteParser {
       return note;
     },
   };
+  return foamParser;
 }
 
 function getFoamDefinitions(
